@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import gpaRoutes from './routes/gpa.js';
 import semesterRoutes from './routes/semesters.js';
 import analysisRoutes from './routes/analysis.js';
+import cors from 'cors';
 
 const app = express();
 app.set('trust proxy', 1); // cần khi chạy sau proxy của Render/Railway...
@@ -35,7 +36,23 @@ app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Lỗi máy chủ. Thử lại sau.' });
 });
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_ORIGIN, // Lấy từ biến môi trường Vercel
+].filter(Boolean);
 
+app.use(cors({
+  origin: function (origin, callback) {
+    // Cho phép các request không có origin (như Postman hoặc cùng domain trên Vercel)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 // ... phần trên giữ nguyên ...
 
 const PORT = process.env.PORT || 4000;
