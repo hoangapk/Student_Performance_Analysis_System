@@ -38,9 +38,9 @@ app.use((err, _req, res, _next) => {
 
 // ... phần trên giữ nguyên ...
 
-if (!process.env.VERCEL) {
-  const port = Number(process.env.PORT || 4000);
-  app.listen(port, () => console.log(`API đang chạy tại http://localhost:${port}`));
+const PORT = process.env.PORT || 4000;
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
 }
-
-export default app;
