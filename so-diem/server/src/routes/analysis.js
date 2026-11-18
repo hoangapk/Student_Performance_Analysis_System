@@ -49,13 +49,13 @@ router.post('/', optionalAuth, limiter, async (req, res) => {
 
   const analysis = await analyzeWithGemini({ cumulative, semesters: summaries });
 
-  if (req.user) {
-    await pool.execute('INSERT INTO analyses (user_id, gpa4, result) VALUES (?, ?, ?)', [
-      req.user.id,
-      cumulative.gpa4,
-      JSON.stringify(analysis),
-    ]);
-  }
+  // if (req.user) {
+  //   await pool.execute('INSERT INTO analyses (user_id, gpa4, result) VALUES (?, ?, ?)', [
+  //     req.user.id,
+  //     cumulative.gpa4,
+  //     JSON.stringify(analysis),
+  //   ]);
+  // }
 
   res.json({
     cumulative,
