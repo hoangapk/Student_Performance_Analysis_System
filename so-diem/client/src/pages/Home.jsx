@@ -5,7 +5,83 @@ import { useAuth } from '../auth.jsx';
 import CourseTable, { newCourse } from '../components/CourseTable.jsx';
 import AnalysisCard from '../components/AnalysisCard.jsx';
 
-const toPayload = (courses) => courses.map(({ name, credits, score }) => ({ name, credits, score }));
+function parseCredits(rawCredits) {
+  const c = parseFloat(String(rawCredits ?? '').replace(',', '.'));
+  if (Number.isNaN(c) || c <= 0 || c > 20) return { valid: false, num: 0 };
+  return { valid: true, num: c };
+}
+
+function evaluateScore(rawScore) {
+  const num = parseFloat(String(rawScore ?? '').replace(',', '.'));
+  if (rawScore === '' || rawScore === null || rawScore === undefined) {
+    return { valid: true, empty: true, num: null, gpa4: null, letter: '-' };
+  }
+  if (Number.isNaN(num) || num < 0 || num > 10) {
+    return { valid: false, empty: false, num: null, gpa4: null, letter: 'Lỗi' };
+  }
+  if (num >= 9.5) return { valid: true, empty: false, num, gpa4: 4.0, letter: 'A+' };
+  if (num >= 8.5) return { valid: true, empty: false, num, gpa4: 4.0, letter: 'A' };
+  if (num >= 8.0) return { valid: true, empty: false, num, gpa4: 3.65, letter: 'A-' };
+  if (num >= 7.5) return { valid: true, empty: false, num, gpa4: 3.33, letter: 'B+' };
+  if (num >= 7.0) return { valid: true, empty: false, num, gpa4: 3.0, letter: 'B' };
+  if (num >= 6.5) return { valid: true, empty: false, num, gpa4: 2.65, letter: 'B-' };
+  if (num >= 6.0) return { valid: true, empty: false, num, gpa4: 2.33, letter: 'C+' };
+  if (num >= 5.5) return { valid: true, empty: false, num, gpa4: 2.0, letter: 'C' };
+  if (num >= 4.5) return { valid: true, empty: false, num, gpa4: 1.65, letter: 'C-' };
+  if (num >= 4.0) return { valid: true, empty: false, num, gpa4: 1.0, letter: 'D' };
+  return { valid: true, empty: false, num, gpa4: 0.0, letter: 'F' };
+}
+
+function getClassification(gpa4) {
+  if (gpa4 >= 3.6) return 'Xuất sắc';
+  if (gpa4 >= 3.2) return 'Giỏi';
+  if (gpa4 >= 2.5) return 'Khá';
+  if (gpa4 >= 2.0) return 'Trung bình';
+  return 'Yếu';
+}
+
+function buildGpaResult(courses) {
+  let totalCredits = 0;
+  let weighted10 = 0;
+  let weighted4 = 0;
+  const gradedCourses = [];
+
+  for (const c of courses) {
+    const cred = parseCredits(c.credits);
+    const sc = evaluateScore(c.score);
+    if (!cred.valid || !sc.valid || sc.empty || sc.num === null) continue;
+
+    totalCredits += cred.num;
+    weighted10 += sc.num * cred.num;
+    weighted4 += sc.gpa4 * cred.num;
+
+    gradedCourses.push({
+      name: c.name?.trim() || 'Môn chưa đặt tên',
+      credits: cred.num,
+      score: sc.num,
+      letter: sc.letter,
+      point: sc.gpa4,
+    });
+  }
+
+  const gpa10 = totalCredits > 0 ? weighted10 / totalCredits : 0;
+  const gpa4 = totalCredits > 0 ? weighted4 / totalCredits : 0;
+
+  return {
+    gpa4,
+    gpa10,
+    totalCredits,
+    classification: getClassification(gpa4),
+    courses: gradedCourses,
+  };
+}
+
+const toPayload = (courses) =>
+  courses.map(({ name, credits, score }) => ({
+    name: name.trim(),
+    credits: parseFloat(String(credits ?? '').replace(',', '.')),
+    score: parseFloat(String(score ?? '').replace(',', '.')),
+  }));
 
 export default function Home() {
   const { user } = useAuth();
@@ -33,7 +109,11 @@ export default function Home() {
 
   const calculate = () =>
     run('calc', async () => {
-      setResult(await api('/gpa/calculate', { method: 'POST', body: { courses: toPayload(courses) } }));
+      const localResult = buildGpaResult(courses);
+      if (localResult.totalCredits === 0) {
+        throw new Error('Hãy nhập ít nhất một môn có tín chỉ và điểm hợp lệ.');
+      }
+      setResult(localResult);
       setAnalysis(null);
     });
 
@@ -118,7 +198,7 @@ export default function Home() {
                   <li key={i} className="flex justify-between py-1.5">
                     <span className="truncate pr-2">{c.name}</span>
                     <span className="shrink-0 font-medium">
-                      {c.score} → {c.letter} ({c.point.toFixed(1)})
+                      {c.score} → {c.letter} ({c.point.toFixed(2)})
                     </span>
                   </li>
                 ))}

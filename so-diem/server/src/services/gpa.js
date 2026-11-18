@@ -3,14 +3,17 @@ import { HttpError } from '../httpError.js';
 // Thang điểm quy đổi 10 -> chữ -> 4 (phổ biến theo quy chế tín chỉ).
 // Mỗi trường có thể khác nhau: sửa bảng này hoặc tách thành nhiều bảng theo trường.
 export const SCALE = [
-  { min: 8.5, letter: 'A', point: 4.0 },
-  { min: 8.0, letter: 'B+', point: 3.5 },
-  { min: 7.0, letter: 'B', point: 3.0 },
-  { min: 6.5, letter: 'C+', point: 2.5 },
-  { min: 5.5, letter: 'C', point: 2.0 },
-  { min: 5.0, letter: 'D+', point: 1.5 },
-  { min: 4.0, letter: 'D', point: 1.0 },
-  { min: 0, letter: 'F', point: 0 },
+  { min: 9.5, letter: 'A+', point: 4.0 },
+  { min: 8.5, letter: 'A',  point: 4.0 },
+  { min: 8.0, letter: 'A-', point: 3.65 },
+  { min: 7.5, letter: 'B+', point: 3.33 },
+  { min: 7.0, letter: 'B',  point: 3.0 },
+  { min: 6.5, letter: 'B-', point: 2.65 },
+  { min: 6.0, letter: 'C+', point: 2.33 },
+  { min: 5.5, letter: 'C',  point: 2.0 },
+  { min: 4.5, letter: 'C-', point: 1.65 },
+  { min: 4.0, letter: 'D',  point: 1.0 },
+  { min: 0,   letter: 'F',  point: 0 },
 ];
 
 const round = (n, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
