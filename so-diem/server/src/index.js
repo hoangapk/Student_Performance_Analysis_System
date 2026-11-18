@@ -36,5 +36,11 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Lỗi máy chủ. Thử lại sau.' });
 });
 
-const port = Number(process.env.PORT || 4000);
-app.listen(port, () => console.log(`API đang chạy tại http://localhost:${port}`));
+// ... phần trên giữ nguyên ...
+
+if (!process.env.VERCEL) {
+  const port = Number(process.env.PORT || 4000);
+  app.listen(port, () => console.log(`API đang chạy tại http://localhost:${port}`));
+}
+
+export default app;

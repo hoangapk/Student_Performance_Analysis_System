@@ -5,7 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Khi chạy local, mọi request /api được chuyển tới backend
-    proxy: { '/api': 'http://localhost:4000' },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
   },
 });
