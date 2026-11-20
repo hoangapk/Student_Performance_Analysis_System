@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS semesters (
   user_id INT UNSIGNED NOT NULL,
   name VARCHAR(100) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_semesters_user (user_id)
 );
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS courses (
   name VARCHAR(100) NOT NULL,
   credits DECIMAL(4,1) NOT NULL,
   score10 DECIMAL(4,2) NOT NULL,
-  letter VARCHAR(2) NOT NULL,
+  letter VARCHAR(3) NOT NULL,
   gpa4 DECIMAL(3,2) NOT NULL,
   FOREIGN KEY (semester_id) REFERENCES semesters(id) ON DELETE CASCADE,
   INDEX idx_courses_semester (semester_id)

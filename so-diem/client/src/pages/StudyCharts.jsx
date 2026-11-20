@@ -124,6 +124,29 @@ function getLocalCourses() {
   }
 }
 
+function extractCoursesFromSemesters(res) {
+  const semesters = Array.isArray(res) ? res : res?.semesters || res?.data || [];
+  if (!Array.isArray(semesters)) return [];
+
+  const list = [];
+  for (const sem of semesters) {
+    const semName = sem?.name || sem?.semester_name || sem?.title || 'Học kỳ';
+    const semCourses = Array.isArray(sem?.courses)
+      ? sem.courses
+      : Array.isArray(sem?.items)
+        ? sem.items
+        : [];
+
+    for (const c of semCourses) {
+      list.push({
+        ...c,
+        semester: c?.semester || c?.term || semName,
+      });
+    }
+  }
+  return list;
+}
+
 export default function StudyCharts() {
   const [summary, setSummary] = useState({
     totalCourses: 0,
@@ -146,14 +169,15 @@ export default function StudyCharts() {
       };
     }
 
-    api('/courses')
+    api('/semesters')
       .then((res) => {
         if (!active) return;
-        const rawList = Array.isArray(res) ? res : res?.courses || res?.data || [];
+        const rawList = extractCoursesFromSemesters(res);
         setSummary(normalizeSummary(rawList));
       })
-      .catch((err) => {
-        if (active) setError(err.message || 'Không tải được dữ liệu biểu đồ.');
+      .catch(() => {
+        if (!active) return;
+        setSummary(normalizeSummary([]));
       })
       .finally(() => {
         if (active) setLoading(false);

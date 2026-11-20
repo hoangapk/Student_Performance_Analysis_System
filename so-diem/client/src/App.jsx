@@ -4,6 +4,7 @@ import Home from './pages/Home.jsx';
 import Tools from './pages/Tools.jsx';
 import StudyCharts from './pages/StudyCharts.jsx';
 import AuthPage from './pages/AuthPage.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="cong-cu" element={<Tools />} />
         <Route path="bieu-do-hoc-tap" element={<StudyCharts />} />
         <Route path="dang-nhap" element={<AuthPage />} />
+        <Route path="so-diem" element={<Dashboard />} />
         <Route
           path="*"
           element={
