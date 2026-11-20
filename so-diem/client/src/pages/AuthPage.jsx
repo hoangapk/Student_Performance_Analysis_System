@@ -10,7 +10,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (user) return <Navigate to="/so-diem" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isLogin = mode === 'login';
@@ -22,7 +22,7 @@ export default function AuthPage() {
     try {
       if (isLogin) await login(form.email, form.password);
       else await register(form.name, form.email, form.password);
-      navigate('/so-diem');
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {

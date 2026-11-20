@@ -148,6 +148,21 @@ export default function Home() {
     }
   }, [semesterName]);
 
+  const resetDraftData = () => {
+    try {
+      localStorage.removeItem(COURSES_STORAGE_KEY);
+      localStorage.removeItem(SEMESTER_STORAGE_KEY);
+    } catch {
+      // Bỏ qua
+    }
+    setCourses([newCourse(), newCourse(), newCourse(), newCourse()]);
+    setSemesterName('');
+    setResult(null);
+    setAnalysis(null);
+    setError('');
+    setNotice('');
+  };
+
   const run = async (kind, fn) => {
     setBusy(kind);
     setError('');
@@ -189,7 +204,10 @@ export default function Home() {
     });
 
   const save = () => {
-    if (!user) return navigate('/dang-nhap');
+    if (!user) {
+      resetDraftData();
+      return navigate('/dang-nhap');
+    }
     return run('save', async () => {
       if (!semesterName.trim()) {
         throw new Error('Hãy đặt tên học kỳ trước khi lưu, ví dụ "HK1 2025-2026".');

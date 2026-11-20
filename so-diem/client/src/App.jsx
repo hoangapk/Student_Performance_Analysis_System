@@ -1,18 +1,30 @@
 import { Link, Route, Routes } from 'react-router-dom';
+import { useAuth } from './auth.jsx';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
 import Tools from './pages/Tools.jsx';
-import StudyCharts from './pages/StudyCharts.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import ResultSheet from './components/ResultSheet.jsx';
 
 export default function App() {
+  const { user, loading } = useAuth();
+
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="cong-cu" element={<Tools />} />
-        <Route path="bieu-do-hoc-tap" element={<StudyCharts />} />
+        <Route
+          path="bang-diem-cua-toi"
+          element={
+            <ResultSheet
+              user={user}
+              authLoading={loading}
+              defaultShowTranscript
+            />
+          }
+        />
         <Route path="dang-nhap" element={<AuthPage />} />
         <Route path="so-diem" element={<Dashboard />} />
         <Route
