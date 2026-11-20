@@ -5,7 +5,8 @@ import { HttpError } from '../httpError.js';
 import { optionalAuth, requireAuth } from '../auth.js';
 import { calculateGpa, validateCourses } from '../services/gpa.js';
 import { loadSemesters } from '../services/semesters.js';
-import { analyzeWithGemini } from '../services/gemini.js';
+// Đổi tên import cho dễ hiểu (vẫn trỏ đúng file service bạn đang dùng, ví dụ ../services/gemini.js hoặc ../services/groq.js)
+import { analyzeWithGemini as analyzeAcademicData } from '../services/grod.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const limiter = rateLimit({
   message: { error: 'Bạn đã phân tích quá nhiều lần. Thử lại sau 15 phút.' },
 });
 
-// Phân tích GPA bằng Gemini.
+// Phân tích GPA bằng AI (Groq).
 // - Gửi kèm body.semesters: phân tích dữ liệu vừa nhập (không cần đăng nhập)
 // - Không gửi body và đã đăng nhập: phân tích toàn bộ học kỳ đã lưu
 router.post('/', optionalAuth, limiter, async (req, res) => {
@@ -39,7 +40,9 @@ router.post('/', optionalAuth, limiter, async (req, res) => {
     return { name, gpa4, gpa10, totalCredits, classification, courses };
   });
 
-  const all = calculateGpa(summaries.flatMap((s) => s.courses.map(({ name, credits, score }) => ({ name, credits, score }))));
+  const all = calculateGpa(
+    summaries.flatMap((s) => s.courses.map(({ name, credits, score }) => ({ name, credits, score }))),
+  );
   const cumulative = {
     gpa4: all.gpa4,
     gpa10: all.gpa10,
@@ -47,8 +50,9 @@ router.post('/', optionalAuth, limiter, async (req, res) => {
     classification: all.classification,
   };
 
-  const analysis = await analyzeWithGemini({ cumulative, semesters: summaries });
+  const analysis = await analyzeAcademicData({ cumulative, semesters: summaries });
 
+  // Nếu muốn lưu lịch sử vào DB khi user đã đăng nhập thì bỏ comment đoạn dưới:
   // if (req.user) {
   //   await pool.execute('INSERT INTO analyses (user_id, gpa4, result) VALUES (?, ?, ?)', [
   //     req.user.id,

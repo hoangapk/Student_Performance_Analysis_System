@@ -7,19 +7,50 @@ import authRoutes from './routes/auth.js';
 import gpaRoutes from './routes/gpa.js';
 import semesterRoutes from './routes/semesters.js';
 import analysisRoutes from './routes/analysis.js';
-import cors from 'cors';
 
 const app = express();
-app.set('trust proxy', 1); // cần khi chạy sau proxy của Render/Railway...
+app.set('trust proxy', 1); // cần khi chạy sau proxy của Render/Railway/Vercel...
+
+const envOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  ...envOrigins,
+];
 
 app.use(helmet());
 app.use(
   cors({
-    origin: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim()),
+    origin(origin, callback) {
+      // Cho phép request không có origin (Postman, curl, server-to-server)
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
   }),
 );
+
 app.use(express.json({ limit: '100kb' }));
-app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false }));
+app.use(
+  '/api',
+  rateLimit({
+    windowMs: 60 * 1000,
+    limit: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
@@ -31,29 +62,15 @@ app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint không t�
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
-  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Dữ liệu gửi lên không phải JSON hợp lệ.' });
-  if (err.status) return res.status(err.status).json({ error: err.message });
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Dữ liệu gửi lên không phải JSON hợp lệ.' });
+  }
+  if (err.status) {
+    return res.status(err.status).json({ error: err.message });
+  }
   console.error(err);
   res.status(500).json({ error: 'Lỗi máy chủ. Thử lại sau.' });
 });
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.CLIENT_ORIGIN, // Lấy từ biến môi trường Vercel
-].filter(Boolean);
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Cho phép các request không có origin (như Postman hoặc cùng domain trên Vercel)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-// ... phần trên giữ nguyên ...
 
 const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== 'production') {
@@ -61,3 +78,5 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Server is running on port ${PORT}`);
   });
 }
+
+export default app;

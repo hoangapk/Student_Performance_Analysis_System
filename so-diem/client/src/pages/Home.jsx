@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import CourseTable, { newCourse } from '../components/CourseTable.jsx';
 import AnalysisCard from '../components/AnalysisCard.jsx';
+
+const COURSES_STORAGE_KEY = 'so_diem_courses';
+const SEMESTER_STORAGE_KEY = 'so_diem_semester_name';
 
 function parseCredits(rawCredits) {
   const c = parseFloat(String(rawCredits ?? '').replace(',', '.'));
@@ -76,23 +79,74 @@ function buildGpaResult(courses) {
   };
 }
 
-const toPayload = (courses) =>
+const toPayload = (courses, semesterName) =>
   courses.map(({ name, credits, score }) => ({
     name: name.trim(),
     credits: parseFloat(String(credits ?? '').replace(',', '.')),
     score: parseFloat(String(score ?? '').replace(',', '.')),
+    semester: semesterName?.trim() || 'Học kỳ hiện tại',
   }));
 
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [courses, setCourses] = useState(() => [newCourse(), newCourse(), newCourse(), newCourse()]);
-  const [semesterName, setSemesterName] = useState('');
+
+  const [courses, setCourses] = useState(() => {
+    try {
+      const saved = localStorage.getItem(COURSES_STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const seenIds = new Set();
+        return parsed.map((item, idx) => {
+          const id =
+            item?.id && !seenIds.has(item.id)
+              ? item.id
+              : `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 8)}`;
+          seenIds.add(id);
+          return {
+            name: typeof item?.name === 'string' ? item.name : '',
+            credits: item?.credits ?? '3',
+            score: item?.score ?? '',
+            ...item,
+            id,
+          };
+        });
+      }
+    } catch {
+      // Bỏ qua nếu trình duyệt chặn localStorage
+    }
+    return [newCourse(), newCourse(), newCourse(), newCourse()];
+  });
+
+  const [semesterName, setSemesterName] = useState(() => {
+    try {
+      return localStorage.getItem(SEMESTER_STORAGE_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
+
   const [result, setResult] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(courses));
+    } catch {
+      // Bỏ qua
+    }
+  }, [courses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SEMESTER_STORAGE_KEY, semesterName);
+    } catch {
+      // Bỏ qua
+    }
+  }, [semesterName]);
 
   const run = async (kind, fn) => {
     setBusy(kind);
@@ -122,7 +176,14 @@ export default function Home() {
       setAnalysis(
         await api('/analysis', {
           method: 'POST',
-          body: { semesters: [{ name: semesterName || 'Học kỳ hiện tại', courses: toPayload(courses) }] },
+          body: {
+            semesters: [
+              {
+                name: semesterName || 'Học kỳ hiện tại',
+                courses: toPayload(courses, semesterName),
+              },
+            ],
+          },
         }),
       );
     });
@@ -130,8 +191,16 @@ export default function Home() {
   const save = () => {
     if (!user) return navigate('/dang-nhap');
     return run('save', async () => {
-      if (!semesterName.trim()) throw new Error('Hãy đặt tên học kỳ trước khi lưu, ví dụ "HK1 2025-2026".');
-      await api('/semesters', { method: 'POST', body: { name: semesterName, courses: toPayload(courses) } });
+      if (!semesterName.trim()) {
+        throw new Error('Hãy đặt tên học kỳ trước khi lưu, ví dụ "HK1 2025-2026".');
+      }
+      await api('/semesters', {
+        method: 'POST',
+        body: {
+          name: semesterName,
+          courses: toPayload(courses, semesterName),
+        },
+      });
       setNotice('Đã lưu học kỳ vào Sổ điểm của bạn.');
     });
   };
@@ -159,7 +228,9 @@ export default function Home() {
               onChange={(e) => setSemesterName(e.target.value)}
             />
           </label>
+
           <CourseTable courses={courses} setCourses={setCourses} />
+
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" className="btn-primary" onClick={calculate} disabled={!!busy}>
               {busy === 'calc' ? 'Đang tính…' : 'Tính GPA'}
@@ -171,6 +242,7 @@ export default function Home() {
               {user ? 'Lưu học kỳ' : 'Đăng nhập để lưu'}
             </button>
           </div>
+
           {error && (
             <p role="alert" className="mt-3 text-sm font-medium text-danger">
               {error}

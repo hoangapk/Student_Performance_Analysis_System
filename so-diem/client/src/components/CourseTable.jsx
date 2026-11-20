@@ -2,7 +2,10 @@ import React, { useMemo, useRef, useState } from 'react';
 
 let counter = 0;
 export const newCourse = () => ({
-  id: ++counter,
+  id:
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `course-${Date.now()}-${++counter}-${Math.random().toString(36).slice(2, 7)}`,
   name: '',
   credits: '3',
   score: '',
@@ -75,7 +78,7 @@ export default function CourseTable({ courses, setCourses }) {
   const remove = (id) => {
     setCourses((cs) => {
       if (cs.length <= 1) {
-        return [{ ...newCourse(), id: cs[0]?.id ?? ++counter }];
+        return [{ ...newCourse(), id: cs[0]?.id ?? newCourse().id }];
       }
       return cs.filter((c) => c.id !== id);
     });

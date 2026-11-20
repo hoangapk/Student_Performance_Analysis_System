@@ -16,7 +16,7 @@ export default function Layout() {
           <nav className="flex flex-wrap items-center gap-1" aria-label="Điều hướng chính">
             <NavLink to="/" end className={navClass}>Tính GPA</NavLink>
             <NavLink to="/cong-cu" className={navClass}>Công cụ</NavLink>
-            <NavLink to="/so-diem" className={navClass}>Sổ điểm của tôi</NavLink>
+            <NavLink to="/bieu-do-hoc-tap" className={navClass}>Biểu đồ học tập</NavLink>
             {user ? (
               <button type="button" onClick={logout} className="btn-ghost ml-2 !py-1.5">
                 Đăng xuất
