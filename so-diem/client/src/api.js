@@ -3,22 +3,20 @@ const BASE = import.meta.env.VITE_API_URL || '';
 export const tokenStore = {
   get() {
     try {
-      return sessionStorage.getItem('token');
+      return localStorage.getItem('token');
     } catch {
       return null;
     }
   },
   set(token) {
     try {
-      sessionStorage.setItem('token', token);
-      localStorage.removeItem('token');
+      localStorage.setItem('token', token);
     } catch {
-      /* bỏ qua nếu trình duyệt chặn storage */
+      /* bỏ qua nếu trình duyệt chặn localStorage */
     }
   },
   clear() {
     try {
-      sessionStorage.removeItem('token');
       localStorage.removeItem('token');
     } catch {
       /* bỏ qua */
