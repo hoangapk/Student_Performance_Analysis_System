@@ -6,7 +6,7 @@ export default function AuthPage() {
   const { user, login, register } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +21,12 @@ export default function AuthPage() {
     setError('');
     try {
       if (isLogin) await login(form.email, form.password);
-      else await register(form.name, form.email, form.password);
+      else {
+        if (form.password !== form.confirmPassword) {
+          throw new Error('Mật khẩu nhập lại không khớp.');
+        }
+        await register(form.name, form.email, form.password, form.confirmPassword);
+      }
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -55,6 +60,20 @@ export default function AuthPage() {
           required
         />
       </label>
+      {!isLogin && (
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold">Nhập lại mật khẩu</span>
+          <input
+            className="field"
+            type="password"
+            value={form.confirmPassword}
+            onChange={set('confirmPassword')}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+        </label>
+      )}
       {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
       <button className="btn-primary w-full" disabled={busy}>
         {busy ? 'Đang xử lý…' : isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
