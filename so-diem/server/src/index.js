@@ -13,7 +13,7 @@ app.set('trust proxy', 1); // cần khi chạy sau proxy của Render/Railway/Ve
 
 const envOrigins = (process.env.CLIENT_ORIGIN || '')
   .split(',')
-  .map((s) => s.trim())
+  .map((s) => s.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
 const allowedOrigins = [
@@ -26,16 +26,16 @@ app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '');
+      const isVercel = typeof origin === 'string' && origin.endsWith('.vercel.app');
+
       // Cho phép request không có origin (Postman, curl, server-to-server)
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app')
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+      if (!origin || allowedOrigins.includes(origin) || isLocalhost || isVercel) {
+        return callback(null, true);
       }
+
+      console.warn('Blocked CORS origin:', origin);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
   }),

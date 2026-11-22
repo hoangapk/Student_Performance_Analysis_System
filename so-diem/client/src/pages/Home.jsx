@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
@@ -131,22 +131,6 @@ export default function Home() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(courses));
-    } catch {
-      // Bỏ qua
-    }
-  }, [courses]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SEMESTER_STORAGE_KEY, semesterName);
-    } catch {
-      // Bỏ qua
-    }
-  }, [semesterName]);
 
   const resetDraftData = () => {
     try {
